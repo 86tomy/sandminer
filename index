@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Catat Tambang - PT. Maju Solusi Sekuriti</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-100">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- KONFIGURASI SUPABASE ---
+        // Ganti dengan URL dan Anon Key dari dashboard Supabase Anda
+        const SUPABASE_URL = 'https://YOUR_PROJECT_URL.supabase.co';
+        const SUPABASE_KEY = 'YOUR_ANON_KEY';
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        function App() {
+            const [loading, setLoading] = useState(false);
+            const [formData, setFormData] = useState({
+                noPolisi: '',
+                jenisPasir: 'Pasir Beton',
+                volume: '8',
+                driver: '',
+                kategori: 'Normal',
+                keterangan: ''
+            });
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setLoading(true);
+
+                try {
+                    const { data, error } = await supabase
+                        .from('produksi_pasir')
+                        .insert([
+                            { 
+                                no_polisi: formData.noPolisi.toUpperCase(), 
+                                jenis_pasir: formData.jenisPasir, 
+                                volume: parseInt(formData.volume),
+                                nama_sopir: formData.driver,
+                                kategori_laporan: formData.kategori,
+                                keterangan: formData.keterangan,
+                                created_at: new Date()
+                            },
+                        ]);
+
+                    if (error) throw error;
+
+                    alert("✅ Data Berhasil Disimpan!");
+                    setFormData({ ...formData, noPolisi: '', driver: '', keterangan: '', kategori: 'Normal' });
+                } catch (error) {
+                    alert("❌ Gagal: " + error.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return (
+                <div className="max-w-md mx-auto min-h-screen shadow-lg bg-white">
+                    {/* Header */}
+                    <div className="bg-blue-700 p-6 text-white text-center rounded-b-3xl shadow-md">
+                        <h1 className="text-2xl font-bold tracking-tight">LOG TAMBANG PASIR</h1>
+                        <p className="text-xs opacity-75 mt-1 text-blue-100 uppercase tracking-widest font-semibold">Produksi & Operasional</p>
+                    </div>
+
+                    <div className="p-6">
+                        <form onSubmit={handleSubmit} className="space-y-5">
+                            {/* Input No Polisi */}
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">No. Polisi Truk</label>
+                                <input 
+                                    type="text" 
+                                    className="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-blue-500 outline-none uppercase font-bold"
+                                    placeholder="CONTOH: B 1234 ABC"
+                                    value={formData.noPolisi}
+                                    onChange={(e) => setFormData({...formData, noPolisi: e.target.value})}
+                                    required
+                                />
+                            </div>
+
+                            {/* Pilihan Jenis Pasir */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-1">Jenis Pasir</label>
+                                    <select 
+                                        className="w-full p-3 border-2 border-gray-200 rounded-xl bg-gray-50"
+                                        value={formData.jenisPasir}
+                                        onChange={(e) => setFormData({...formData, jenisPasir: e.target.value})}
+                                    >
+                                        <option>Pasir Beton</option>
+                                        <option>Pasir Pasang</option>
+                                        <option>Pasir Urug</option>
+                                        <option>Sirtu</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-1">Volume (m³)</label>
+                                    <select 
+                                        className="w-full p-3 border-2 border-gray-200 rounded-xl bg-gray-50"
+                                        value={formData.volume}
+                                        onChange={(e) => setFormData({...formData, volume: e.target.value})}
+                                    >
+                                        <option value="7">7 m³</option>
+                                        <option value="8">8 m³</option>
+                                        <option value="22">22 m³</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Nama Sopir */}
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Nama Sopir</label>
+                                <input 
+                                    type="text" 
+                                    className="w-full p-3 border-2 border-gray-200 rounded-xl"
+                                    placeholder="Input nama sopir"
+                                    value={formData.driver}
+                                    onChange={(e) => setFormData({...formData, driver: e.target.value})}
+                                />
+                            </div>
+
+                            {/* Kategori Laporan */}
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1 text-center">Kategori Laporan</label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {['Normal', 'Kualitas', 'Operasional', 'Keuangan'].map((cat) => (
+                                        <button
+                                            key={cat}
+                                            type="button"
+                                            onClick={() => setFormData({...formData, kategori: cat})}
+                                            className={`p-2 text-xs font-bold rounded-lg border-2 transition-all ${formData.kategori === cat ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-gray-200 text-gray-500'}`}
+                                        >
+                                            {cat}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Penjelasan Tambahan */}
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Penjelasan / Keterangan</label>
+                                <textarea 
+                                    className="w-full p-3 border-2 border-gray-200 rounded-xl bg-gray-50 text-sm"
+                                    placeholder="Tulis detail catatan di sini..."
+                                    rows="3"
+                                    value={formData.keterangan}
+                                    onChange={(e) => setFormData({...formData, keterangan: e.target.value})}
+                                ></textarea>
+                            </div>
+
+                            {/* Tombol Simpan */}
+                            <button 
+                                type="submit" 
+                                disabled={loading}
+                                className={`w-full py-4 rounded-2xl text-white font-black text-lg shadow-xl transition-all active:scale-95 ${loading ? 'bg-gray-400' : 'bg-green-600 hover:bg-green-700'}`}
+                            >
+                                {loading ? 'MENYIMPAN...' : 'SIMPAN RITASE'}
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <footer className="p-6 text-center text-gray-400 text-[10px]">
+                        &copy; 2026 PT. Maju Solusi Sekuriti <br/> Digital Production Log System
+                    </footer>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
